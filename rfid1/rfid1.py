@@ -4,12 +4,21 @@
 import RPi.GPIO as GPIO
 import MFRC522
 import signal
+import time
 
 continue_reading = True
+flag = 0
+
+# Setup Beeper
+BeepPin = 12    # pin12
+
+GPIO.setwarnings(False)
+GPIO.setmode(GPIO.BOARD)        # Numbers pins by physical location
+GPIO.setup(BeepPin, GPIO.OUT)   # Set pin mode as output
+GPIO.output(BeepPin, GPIO.HIGH) # Set pin to high(+3.3V) to off the beep
 
 # Setup LED
 LedPin = 13    # pin11
-GPIO.setmode(GPIO.BOARD)       # Numbers pins by physical location - already done by MFRC522
 GPIO.setup(LedPin, GPIO.OUT)   # Set pin mode as output
 GPIO.output(LedPin, GPIO.HIGH) # Set pin to high(+3.3V) to off the led
 LedState = "off"                # Initialize to off
@@ -40,6 +49,8 @@ MIFAREReader = MFRC522.MFRC522()
 # Welcome message
 print("Welcome to the MFRC522 data read example")
 print("Press Ctrl-C to stop.")
+GPIO.setup(BeepPin, GPIO.OUT)   # Set pin mode as output
+GPIO.output(BeepPin, GPIO.LOW) # Set pin to high(+3.3V) to off the beep
 
 # This loop keeps checking for chips. If one is near it will get the UID and authenticate
 while continue_reading:
@@ -57,6 +68,7 @@ while continue_reading:
     # If we have the UID, continue
     if status == MIFAREReader.MI_OK:
 
+        flag = 1
         # Print UID
         print("Card read UID: "+str(uid[0])+","+str(uid[1])+","+str(uid[2])+","+str(uid[3]))
     
@@ -73,6 +85,15 @@ while continue_reading:
         if status == MIFAREReader.MI_OK:
             MIFAREReader.MFRC522_Read(8)
             MIFAREReader.MFRC522_StopCrypto1()
-            toggleLED() # Toggle the LED
+            #toggleLED() # Toggle the LED
         else:
             print("Authentication error")
+            flag = 0
+    if flag == 1:
+      GPIO.output(BeepPin, GPIO.HIGH)
+      GPIO.output(LedPin, GPIO.LOW)  # led on
+      time.sleep(1)
+      GPIO.output(BeepPin, GPIO.LOW)
+      GPIO.output(LedPin, GPIO.HIGH)  # led off
+      time.sleep(0.1)
+      flag = 0
